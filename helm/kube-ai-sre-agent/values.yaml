@@ -1,0 +1,100 @@
+# Controller configuration
+controller:
+  image:
+    repository: ghcr.io/adiii717/kube-ai-sre-agent-controller
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 20Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+  replicas: 1
+
+# Analyzer Job configuration
+analyzer:
+  image:
+    repository: ghcr.io/adiii717/kube-ai-sre-agent-analyzer
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  # Job TTL after completion (seconds)
+  ttlSecondsAfterFinished: 300
+
+# Event filters - which events to monitor
+events:
+  crashLoopBackOff: true
+  imagePullBackOff: true
+  healthCheckFailure: true
+  oomKilled: true
+
+# LLM configuration
+llm:
+  # Provider: gemini, claude, or openai
+  provider: gemini
+
+  # API key (can also be set via secret)
+  apiKey: ""
+
+  # Secret name if using existing secret
+  existingSecret: ""
+  existingSecretKey: "api-key"
+
+  # Model configuration
+  model:
+    gemini: "gemini-pro"
+    claude: "claude-3-5-sonnet-20241022"
+    openai: "gpt-4"
+
+  # Max tokens for analysis
+  maxTokens: 1000
+
+# Slack notification configuration
+slack:
+  enabled: true
+  webhook: ""
+
+  # Existing secret for webhook
+  existingSecret: ""
+  existingSecretKey: "webhook-url"
+
+  # Channel override (if webhook supports it)
+  channel: ""
+
+# Namespace to monitor (empty = all namespaces)
+# Note: Requires cluster-wide RBAC if monitoring all namespaces
+watchNamespace: ""
+
+# Service account
+serviceAccount:
+  create: true
+  name: kube-ai-sre-agent
+  annotations: {}
+
+# RBAC
+rbac:
+  create: true
+
+# Pod annotations
+podAnnotations: {}
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}

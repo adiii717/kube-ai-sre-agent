@@ -1,0 +1,15 @@
+apiVersion: v2
+name: kube-ai-sre-agent
+description: Lightweight event-driven Kubernetes incident response with AI
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - kubernetes
+  - sre
+  - ai
+  - incident-response
+  - observability
+maintainers:
+  - name: adiii717
+    url: https://github.com/adiii717

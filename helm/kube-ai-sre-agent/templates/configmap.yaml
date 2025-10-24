@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+data:
+  config.yaml: |
+    events:
+      crashLoopBackOff: {{ .Values.events.crashLoopBackOff }}
+      imagePullBackOff: {{ .Values.events.imagePullBackOff }}
+      healthCheckFailure: {{ .Values.events.healthCheckFailure }}
+      oomKilled: {{ .Values.events.oomKilled }}
+    llm:
+      provider: {{ .Values.llm.provider }}
+      model:
+        gemini: {{ .Values.llm.model.gemini }}
+        claude: {{ .Values.llm.model.claude }}
+        openai: {{ .Values.llm.model.openai }}
+      maxTokens: {{ .Values.llm.maxTokens }}
+    slack:
+      enabled: {{ .Values.slack.enabled }}
+      channel: {{ .Values.slack.channel | quote }}
+    analyzer:
+      image: {{ .Values.analyzer.image.repository }}:{{ .Values.analyzer.image.tag }}
+      ttlSecondsAfterFinished: {{ .Values.analyzer.ttlSecondsAfterFinished }}
+      resources:
+        requests:
+          cpu: {{ .Values.analyzer.resources.requests.cpu }}
+          memory: {{ .Values.analyzer.resources.requests.memory }}
+        limits:
+          cpu: {{ .Values.analyzer.resources.limits.cpu }}
+          memory: {{ .Values.analyzer.resources.limits.memory }}
