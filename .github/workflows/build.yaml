@@ -65,11 +65,8 @@ jobs:
     strategy:
       matrix:
         component: [controller, analyzer]
-        os: [linux, darwin, windows]
+        os: [linux, darwin]
         arch: [amd64, arm64]
-        exclude:
-          - os: windows
-            arch: arm64
 
     steps:
       - name: Checkout
@@ -85,14 +82,10 @@ jobs:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
         run: |
-          OUTPUT_NAME=bin/${{ matrix.component }}-${{ matrix.os }}-${{ matrix.arch }}
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            OUTPUT_NAME="${OUTPUT_NAME}.exe"
-          fi
-          go build -o ${OUTPUT_NAME} ./cmd/${{ matrix.component }}
+          go build -o bin/${{ matrix.component }}-${{ matrix.os }}-${{ matrix.arch }} ./cmd/${{ matrix.component }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.component }}-${{ matrix.os }}-${{ matrix.arch }}
           path: bin/${{ matrix.component }}-*
