@@ -5,7 +5,9 @@ import (
 	"flag"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/adiii717/kube-ai-sre-agent/pkg/config"
 	"github.com/adiii717/kube-ai-sre-agent/pkg/controller"
@@ -40,6 +42,14 @@ func main() {
 	llmAPIKey := os.Getenv("LLM_API_KEY")
 	slackWebhook := os.Getenv("SLACK_WEBHOOK_URL")
 
+	cooldownMinutes := 5 // default
+	if envCooldown := os.Getenv("COOLDOWN_MINUTES"); envCooldown != "" {
+		if minutes, err := strconv.Atoi(envCooldown); err == nil {
+			cooldownMinutes = minutes
+		}
+	}
+	cooldown := time.Duration(cooldownMinutes) * time.Minute
+
 	// Create Kubernetes client
 	var restConfig *rest.Config
 	if kubeconfig != "" {
@@ -57,7 +67,7 @@ func main() {
 	}
 
 	// Create controller
-	ctrl := controller.New(clientset, cfg, namespace, watchNamespace, llmAPIKey, slackWebhook)
+	ctrl := controller.New(clientset, cfg, namespace, watchNamespace, llmAPIKey, slackWebhook, cooldown)
 
 	// Setup signal handling
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

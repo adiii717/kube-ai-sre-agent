@@ -30,8 +30,16 @@ analyzer:
       cpu: 1000m
       memory: 1Gi
 
-  # Job TTL after completion (seconds)
+  # Job TTL after completion (seconds) - cleanup old jobs
   ttlSecondsAfterFinished: 300
+
+  # Maximum number of retries for failed jobs
+  backoffLimit: 2
+
+# Incident deduplication
+deduplication:
+  # Cooldown period - don't analyze same incident within this time
+  cooldownMinutes: 5
 
 # Event filters - which events to monitor
 events:

@@ -37,9 +37,10 @@ type SlackConfig struct {
 
 // AnalyzerConfig contains analyzer job settings
 type AnalyzerConfig struct {
-	Image                    string            `yaml:"image"`
-	TTLSecondsAfterFinished int32             `yaml:"ttlSecondsAfterFinished"`
-	Resources               ResourcesConfig   `yaml:"resources"`
+	Image                   string          `yaml:"image"`
+	TTLSecondsAfterFinished int32           `yaml:"ttlSecondsAfterFinished"`
+	BackoffLimit            int32           `yaml:"backoffLimit"`
+	Resources               ResourcesConfig `yaml:"resources"`
 }
 
 // ResourcesConfig defines resource requests and limits

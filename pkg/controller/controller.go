@@ -19,21 +19,23 @@ import (
 
 // Controller watches pods and spawns analysis jobs
 type Controller struct {
-	clientset     *kubernetes.Clientset
-	config        *config.Config
-	detector      *events.Detector
-	namespace     string
+	clientset      *kubernetes.Clientset
+	config         *config.Config
+	detector       *events.Detector
+	tracker        *IncidentTracker
+	namespace      string
 	watchNamespace string
-	llmAPIKey     string
-	slackWebhook  string
+	llmAPIKey      string
+	slackWebhook   string
 }
 
 // New creates a new controller
-func New(clientset *kubernetes.Clientset, cfg *config.Config, namespace, watchNamespace, llmAPIKey, slackWebhook string) *Controller {
+func New(clientset *kubernetes.Clientset, cfg *config.Config, namespace, watchNamespace, llmAPIKey, slackWebhook string, cooldown time.Duration) *Controller {
 	return &Controller{
 		clientset:      clientset,
 		config:         cfg,
 		detector:       events.NewDetector(&cfg.Events),
+		tracker:        NewIncidentTracker(cooldown),
 		namespace:      namespace,
 		watchNamespace: watchNamespace,
 		llmAPIKey:      llmAPIKey,
@@ -95,6 +97,12 @@ func (c *Controller) handlePodUpdate(oldObj, newObj interface{}) {
 
 	klog.Infof("Detected %s for pod %s/%s", incident.EventType, incident.Namespace, incident.PodName)
 
+	// Check if we should analyze (deduplication)
+	if !c.tracker.ShouldAnalyze(incident) {
+		klog.Infof("Skipping %s for pod %s/%s (analyzed recently)", incident.EventType, incident.Namespace, incident.PodName)
+		return
+	}
+
 	// Spawn analysis job
 	if err := c.spawnAnalysisJob(context.Background(), incident); err != nil {
 		klog.Errorf("Failed to spawn analysis job: %v", err)
@@ -121,6 +129,7 @@ func (c *Controller) spawnAnalysisJob(ctx context.Context, incident *events.PodI
 		},
 		Spec: batchv1.JobSpec{
 			TTLSecondsAfterFinished: &c.config.Analyzer.TTLSecondsAfterFinished,
+			BackoffLimit:            &c.config.Analyzer.BackoffLimit,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					ServiceAccountName: "kube-ai-sre-agent",

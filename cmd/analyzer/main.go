@@ -9,6 +9,7 @@ import (
 
 	"github.com/adiii717/kube-ai-sre-agent/pkg/llm"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -40,12 +41,22 @@ func main() {
 		klog.Fatalf("Failed to create Kubernetes client: %v", err)
 	}
 
+	// Fetch pod details (describe)
+	podInfo, err := getPodInfo(clientset, podNamespace, podName)
+	if err != nil {
+		klog.Errorf("Failed to get pod info: %v", err)
+		podInfo = fmt.Sprintf("Failed to get pod info: %v", err)
+	}
+
 	// Fetch pod logs
 	logs, err := fetchPodLogs(clientset, podNamespace, podName, containerName)
-	if err != nil {
-		klog.Errorf("Failed to fetch logs: %v", err)
-		logs = fmt.Sprintf("Failed to fetch logs: %v", err)
+	if err != nil || logs == "" {
+		klog.Warningf("Failed to fetch logs or logs empty: %v", err)
+		logs = "(No logs available)"
 	}
+
+	// Combine pod info and logs
+	context := fmt.Sprintf("Pod Information:\n%s\n\nPod Logs:\n%s", podInfo, logs)
 
 	// Create LLM client
 	llmClient, err := llm.NewClient(llm.Provider(llmProvider), llmAPIKey)
@@ -54,7 +65,7 @@ func main() {
 	}
 
 	// Analyze with LLM
-	analysis, err := llmClient.Analyze(eventType, podName, podNamespace, logs)
+	analysis, err := llmClient.Analyze(eventType, podName, podNamespace, context)
 	if err != nil {
 		klog.Fatalf("Failed to analyze: %v", err)
 	}
@@ -71,6 +82,54 @@ func main() {
 	}
 
 	klog.Info("Analysis complete")
+}
+
+func getPodInfo(clientset *kubernetes.Clientset, namespace, podName string) (string, error) {
+	ctx := context.Background()
+
+	// Get pod details
+	pod, err := clientset.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	var info string
+	info += fmt.Sprintf("Status: %s\n", pod.Status.Phase)
+	info += fmt.Sprintf("Reason: %s\n", pod.Status.Reason)
+	info += fmt.Sprintf("Message: %s\n", pod.Status.Message)
+	info += fmt.Sprintf("Host IP: %s\n", pod.Status.HostIP)
+	info += fmt.Sprintf("Pod IP: %s\n", pod.Status.PodIP)
+	info += fmt.Sprintf("Start Time: %v\n", pod.Status.StartTime)
+
+	// Container statuses
+	info += "\nContainer Statuses:\n"
+	for _, cs := range pod.Status.ContainerStatuses {
+		info += fmt.Sprintf("  - %s: Ready=%v, RestartCount=%d\n", cs.Name, cs.Ready, cs.RestartCount)
+
+		if cs.State.Waiting != nil {
+			info += fmt.Sprintf("    Waiting: %s - %s\n", cs.State.Waiting.Reason, cs.State.Waiting.Message)
+		}
+		if cs.State.Running != nil {
+			info += fmt.Sprintf("    Running since: %v\n", cs.State.Running.StartedAt)
+		}
+		if cs.State.Terminated != nil {
+			info += fmt.Sprintf("    Terminated: ExitCode=%d, Reason=%s, Message=%s\n",
+				cs.State.Terminated.ExitCode, cs.State.Terminated.Reason, cs.State.Terminated.Message)
+		}
+
+		if cs.LastTerminationState.Terminated != nil {
+			info += fmt.Sprintf("    Last Termination: ExitCode=%d, Reason=%s\n",
+				cs.LastTerminationState.Terminated.ExitCode, cs.LastTerminationState.Terminated.Reason)
+		}
+	}
+
+	// Conditions
+	info += "\nConditions:\n"
+	for _, cond := range pod.Status.Conditions {
+		info += fmt.Sprintf("  - %s: %s (Reason: %s)\n", cond.Type, cond.Status, cond.Reason)
+	}
+
+	return info, nil
 }
 
 func fetchPodLogs(clientset *kubernetes.Clientset, namespace, podName, containerName string) (string, error) {
