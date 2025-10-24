@@ -35,13 +35,112 @@ Event occurs → Controller detects → Spawns Job → Analyzes with LLM → Sla
 - **Controller**: Watches K8s events, spawns Jobs (10m CPU, 20MB RAM)
 - **Analysis Job**: Fetches logs, calls LLM, sends alerts (500m CPU, 512MB RAM, 30-60s)
 
-## Quick Start
+## Installation
+
+### Prerequisites
+
+- Kubernetes 1.24+
+- Helm 3.8+
+- LLM API key (Gemini, Claude, or OpenAI)
+- Slack webhook URL (optional)
+
+### Install from OCI Registry
 
 ```bash
-helm install sre-agent ./helm/kube-ai-sre-agent \
-  --set llm.apiKey=YOUR_KEY \
+# Install with Gemini
+helm install kube-ai-sre-agent oci://ghcr.io/adiii717/kube-ai-sre-agent \
+  --version 0.1.0 \
   --set llm.provider=gemini \
+  --set llm.apiKey=YOUR_GEMINI_API_KEY \
+  --set slack.webhook=YOUR_SLACK_WEBHOOK
+
+# Install with Claude
+helm install kube-ai-sre-agent oci://ghcr.io/adiii717/kube-ai-sre-agent \
+  --version 0.1.0 \
+  --set llm.provider=claude \
+  --set llm.apiKey=YOUR_CLAUDE_API_KEY \
+  --set slack.webhook=YOUR_SLACK_WEBHOOK
+```
+
+### Install from Source
+
+```bash
+git clone https://github.com/adiii717/kube-ai-sre-agent.git
+cd kube-ai-sre-agent
+
+helm install kube-ai-sre-agent ./helm/kube-ai-sre-agent \
+  --set llm.provider=gemini \
+  --set llm.apiKey=YOUR_API_KEY \
   --set slack.webhook=YOUR_WEBHOOK
+```
+
+### Configuration
+
+Create a `values.yaml` file:
+
+```yaml
+# Enable/disable specific event types
+events:
+  crashLoopBackOff: true
+  imagePullBackOff: true
+  healthCheckFailure: true
+  oomKilled: true
+
+# LLM provider configuration
+llm:
+  provider: gemini  # gemini, claude, or openai
+  apiKey: "your-api-key"
+
+# Slack notifications
+slack:
+  enabled: true
+  webhook: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+
+# Resource limits
+controller:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 20Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+analyzer:
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+```
+
+Install with custom values:
+
+```bash
+helm install kube-ai-sre-agent oci://ghcr.io/adiii717/kube-ai-sre-agent \
+  --version 0.1.0 \
+  -f values.yaml
+```
+
+### Verify Installation
+
+```bash
+# Check controller is running
+kubectl get pods -l app.kubernetes.io/name=kube-ai-sre-agent
+
+# View logs
+kubectl logs -l app.kubernetes.io/component=controller -f
+
+# Watch for analysis jobs
+kubectl get jobs -w
+```
+
+## Uninstall
+
+```bash
+helm uninstall kube-ai-sre-agent
 ```
 
 ## Features
@@ -57,16 +156,13 @@ helm install sre-agent ./helm/kube-ai-sre-agent \
 ## Development
 
 ```bash
-# Build
+# Build locally
 make build
 
-# Run locally
-make run
-
-# Build images
+# Build Docker images
 make docker-build
 
-# Deploy to cluster
+# Deploy from local chart
 make deploy
 ```
 
