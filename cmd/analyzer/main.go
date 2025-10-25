@@ -133,8 +133,26 @@ func getPodInfo(clientset *kubernetes.Clientset, namespace, podName string) (str
 }
 
 func fetchPodLogs(clientset *kubernetes.Clientset, namespace, podName, containerName string) (string, error) {
+	// Try to get current logs first
+	logs, err := getPodLogsWithOptions(clientset, namespace, podName, containerName, false)
+	if err == nil && logs != "" {
+		return logs, nil
+	}
+
+	// If current logs fail or empty, try previous container logs (for crashed pods)
+	klog.V(2).Infof("Current logs unavailable, trying previous container logs")
+	logs, err = getPodLogsWithOptions(clientset, namespace, podName, containerName, true)
+	if err == nil && logs != "" {
+		return fmt.Sprintf("[Previous Container Logs]\n%s", logs), nil
+	}
+
+	return "", fmt.Errorf("no logs available from current or previous container")
+}
+
+func getPodLogsWithOptions(clientset *kubernetes.Clientset, namespace, podName, containerName string, previous bool) (string, error) {
 	podLogOpts := &corev1.PodLogOptions{
 		TailLines: int64Ptr(100),
+		Previous:  previous,
 	}
 
 	if containerName != "" {
@@ -148,13 +166,12 @@ func fetchPodLogs(clientset *kubernetes.Clientset, namespace, podName, container
 	}
 	defer podLogs.Close()
 
-	buf := make([]byte, 2000)
-	numBytes, err := podLogs.Read(buf)
-	if err != nil && err != io.EOF {
+	buf, err := io.ReadAll(podLogs)
+	if err != nil {
 		return "", err
 	}
 
-	return string(buf[:numBytes]), nil
+	return string(buf), nil
 }
 
 func sendSlackNotification(webhook, eventType, namespace, podName, analysis string) error {

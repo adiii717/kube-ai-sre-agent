@@ -89,6 +89,11 @@ func (c *Controller) handlePodUpdate(oldObj, newObj interface{}) {
 		return
 	}
 
+	// Skip analyzer job pods to prevent recursive analysis
+	if pod.Labels != nil && pod.Labels["app.kubernetes.io/component"] == "analyzer" {
+		return
+	}
+
 	// Detect incident
 	incident := c.detector.DetectIncident(pod)
 	if incident == nil {

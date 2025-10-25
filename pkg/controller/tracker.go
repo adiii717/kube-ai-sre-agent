@@ -48,12 +48,20 @@ func (t *IncidentTracker) ShouldAnalyze(incident *events.PodIncident) bool {
 
 	now := time.Now()
 
-	// Load or create record
-	recordInterface, _ := t.incidents.LoadOrStore(key, &IncidentRecord{
-		FirstSeen: now,
-		LastSeen:  now,
-		Count:     0,
-	})
+	// Try to load existing record
+	recordInterface, loaded := t.incidents.Load(key)
+
+	// If this is the first time seeing this incident, analyze it
+	if !loaded {
+		record := &IncidentRecord{
+			FirstSeen: now,
+			LastSeen:  now,
+			Count:     1,
+		}
+		t.incidents.Store(key, record)
+		return true
+	}
+
 	record := recordInterface.(*IncidentRecord)
 
 	// Check if silenced (escalated)
