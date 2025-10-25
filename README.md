@@ -116,6 +116,17 @@ analyzer:
     limits:
       cpu: 1000m
       memory: 1Gi
+
+# Alert deduplication and noise reduction
+deduplication:
+  # Don't re-analyze same incident within this window
+  cooldownMinutes: 5
+
+  # Smart escalation - silence noisy incidents
+  escalation:
+    enabled: true
+    threshold: 10           # Silence after this many incidents
+    silenceDurationMinutes: 60  # Silence for this duration
 ```
 
 Install with custom values:
@@ -125,6 +136,49 @@ helm install kube-ai-sre-agent oci://ghcr.io/adiii717/kube-ai-sre-agent \
   --version 0.1.0 \
   -f values.yaml
 ```
+
+### Alert Deduplication & Escalation
+
+The agent prevents alert noise through smart deduplication and escalation:
+
+**Default behavior (balanced):**
+```yaml
+deduplication:
+  cooldownMinutes: 5
+  escalation:
+    enabled: true
+    threshold: 10
+    silenceDurationMinutes: 60
+```
+→ If a pod crashes 10 times within 5 minutes, silence it for 1 hour
+
+**Aggressive (quick to silence):**
+```yaml
+deduplication:
+  cooldownMinutes: 2
+  escalation:
+    threshold: 3
+    silenceDurationMinutes: 30
+```
+→ If crashes 3 times in 2 minutes, silence for 30 minutes
+
+**Conservative (tolerant of transient issues):**
+```yaml
+deduplication:
+  cooldownMinutes: 10
+  escalation:
+    threshold: 20
+    silenceDurationMinutes: 120
+```
+→ If crashes 20 times in 10 minutes, silence for 2 hours
+
+**Disable escalation entirely:**
+```yaml
+deduplication:
+  escalation:
+    enabled: false
+```
+→ Only basic deduplication (no silencing)
 
 ### Verify Installation
 

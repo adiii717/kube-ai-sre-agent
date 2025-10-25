@@ -39,18 +39,33 @@ analyzer:
   # Job timeout - kill job if it runs longer than this (seconds)
   activeDeadlineSeconds: 600  # 10 minutes max
 
-# Incident deduplication
+# Alert deduplication and noise reduction
 deduplication:
   # Initial cooldown period - don't analyze same incident within this time
   cooldownMinutes: 5
 
   # Smart escalation - silence noisy incidents
+  # Example: If a pod crashes 10 times in 5 minutes, it's permanently broken
+  # → silence it for 1 hour to prevent alert noise
   escalation:
     enabled: true
     # If incident occurs this many times within cooldown period
     threshold: 10
     # Then silence it for this long (minutes)
     silenceDurationMinutes: 60  # 1 hour
+
+    # Configuration examples:
+    # Aggressive (quick to silence):
+    #   cooldownMinutes: 2
+    #   threshold: 3
+    #   silenceDurationMinutes: 30
+    #   → If crashes 3 times in 2 minutes, silence for 30 minutes
+    #
+    # Conservative (tolerant of transient issues):
+    #   cooldownMinutes: 10
+    #   threshold: 20
+    #   silenceDurationMinutes: 120
+    #   → If crashes 20 times in 10 minutes, silence for 2 hours
 
 # Event filters - which events to monitor
 events:
