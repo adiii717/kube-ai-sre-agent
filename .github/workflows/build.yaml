@@ -15,6 +15,7 @@ env:
 jobs:
   build-images:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
@@ -53,7 +54,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile.${{ matrix.component }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -62,6 +63,7 @@ jobs:
 
   publish-helm:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
       packages: write
