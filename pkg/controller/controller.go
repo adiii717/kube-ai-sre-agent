@@ -30,12 +30,12 @@ type Controller struct {
 }
 
 // New creates a new controller
-func New(clientset *kubernetes.Clientset, cfg *config.Config, namespace, watchNamespace, llmAPIKey, slackWebhook string, cooldown time.Duration) *Controller {
+func New(clientset *kubernetes.Clientset, cfg *config.Config, namespace, watchNamespace, llmAPIKey, slackWebhook string, cooldown time.Duration, escalationEnabled bool, escalationThreshold int, silenceDuration time.Duration) *Controller {
 	return &Controller{
 		clientset:      clientset,
 		config:         cfg,
 		detector:       events.NewDetector(&cfg.Events),
-		tracker:        NewIncidentTracker(cooldown),
+		tracker:        NewIncidentTracker(cooldown, escalationEnabled, escalationThreshold, silenceDuration),
 		namespace:      namespace,
 		watchNamespace: watchNamespace,
 		llmAPIKey:      llmAPIKey,

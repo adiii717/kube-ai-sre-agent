@@ -44,6 +44,12 @@ spec:
               value: {{ .Values.watchNamespace | quote }}
             - name: COOLDOWN_MINUTES
               value: {{ .Values.deduplication.cooldownMinutes | quote }}
+            - name: ESCALATION_ENABLED
+              value: {{ .Values.deduplication.escalation.enabled | quote }}
+            - name: ESCALATION_THRESHOLD
+              value: {{ .Values.deduplication.escalation.threshold | quote }}
+            - name: SILENCE_DURATION_MINUTES
+              value: {{ .Values.deduplication.escalation.silenceDurationMinutes | quote }}
             - name: LLM_API_KEY
               valueFrom:
                 secretKeyRef:

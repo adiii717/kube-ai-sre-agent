@@ -41,8 +41,16 @@ analyzer:
 
 # Incident deduplication
 deduplication:
-  # Cooldown period - don't analyze same incident within this time
+  # Initial cooldown period - don't analyze same incident within this time
   cooldownMinutes: 5
+
+  # Smart escalation - silence noisy incidents
+  escalation:
+    enabled: true
+    # If incident occurs this many times within cooldown period
+    threshold: 10
+    # Then silence it for this long (minutes)
+    silenceDurationMinutes: 60  # 1 hour
 
 # Event filters - which events to monitor
 events:

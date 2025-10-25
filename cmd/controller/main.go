@@ -50,6 +50,27 @@ func main() {
 	}
 	cooldown := time.Duration(cooldownMinutes) * time.Minute
 
+	// Escalation config
+	escalationEnabled := true
+	if env := os.Getenv("ESCALATION_ENABLED"); env != "" {
+		escalationEnabled, _ = strconv.ParseBool(env)
+	}
+
+	escalationThreshold := 10 // default
+	if env := os.Getenv("ESCALATION_THRESHOLD"); env != "" {
+		if val, err := strconv.Atoi(env); err == nil {
+			escalationThreshold = val
+		}
+	}
+
+	silenceDurationMinutes := 60 // default 1 hour
+	if env := os.Getenv("SILENCE_DURATION_MINUTES"); env != "" {
+		if val, err := strconv.Atoi(env); err == nil {
+			silenceDurationMinutes = val
+		}
+	}
+	silenceDuration := time.Duration(silenceDurationMinutes) * time.Minute
+
 	// Create Kubernetes client
 	var restConfig *rest.Config
 	if kubeconfig != "" {
@@ -67,7 +88,7 @@ func main() {
 	}
 
 	// Create controller
-	ctrl := controller.New(clientset, cfg, namespace, watchNamespace, llmAPIKey, slackWebhook, cooldown)
+	ctrl := controller.New(clientset, cfg, namespace, watchNamespace, llmAPIKey, slackWebhook, cooldown, escalationEnabled, escalationThreshold, silenceDuration)
 
 	// Setup signal handling
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
