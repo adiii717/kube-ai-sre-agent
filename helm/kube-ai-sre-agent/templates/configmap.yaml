@@ -28,6 +28,7 @@ data:
       image: {{ .Values.analyzer.image.repository }}:{{ .Values.analyzer.image.tag }}
       ttlSecondsAfterFinished: {{ .Values.analyzer.ttlSecondsAfterFinished }}
       backoffLimit: {{ .Values.analyzer.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.analyzer.activeDeadlineSeconds }}
       resources:
         requests:
           cpu: {{ .Values.analyzer.resources.requests.cpu }}

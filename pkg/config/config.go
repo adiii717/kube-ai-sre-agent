@@ -40,6 +40,7 @@ type AnalyzerConfig struct {
 	Image                   string          `yaml:"image"`
 	TTLSecondsAfterFinished int32           `yaml:"ttlSecondsAfterFinished"`
 	BackoffLimit            int32           `yaml:"backoffLimit"`
+	ActiveDeadlineSeconds   int64           `yaml:"activeDeadlineSeconds"`
 	Resources               ResourcesConfig `yaml:"resources"`
 }
 

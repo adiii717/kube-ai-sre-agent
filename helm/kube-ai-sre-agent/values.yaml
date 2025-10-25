@@ -36,6 +36,9 @@ analyzer:
   # Maximum number of retries for failed jobs
   backoffLimit: 2
 
+  # Job timeout - kill job if it runs longer than this (seconds)
+  activeDeadlineSeconds: 600  # 10 minutes max
+
 # Incident deduplication
 deduplication:
   # Cooldown period - don't analyze same incident within this time

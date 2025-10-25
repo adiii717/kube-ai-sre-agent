@@ -130,6 +130,7 @@ func (c *Controller) spawnAnalysisJob(ctx context.Context, incident *events.PodI
 		Spec: batchv1.JobSpec{
 			TTLSecondsAfterFinished: &c.config.Analyzer.TTLSecondsAfterFinished,
 			BackoffLimit:            &c.config.Analyzer.BackoffLimit,
+			ActiveDeadlineSeconds:   &c.config.Analyzer.ActiveDeadlineSeconds,
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					ServiceAccountName: "kube-ai-sre-agent",
