@@ -62,6 +62,8 @@ helm install kube-ai-sre-agent oci://ghcr.io/adiii717/kube-ai-sre-agent \
   --set slack.webhook=YOUR_SLACK_WEBHOOK
 ```
 
+**Note for Apple Silicon (M1/M2) users:** Published images are amd64 only. For local testing on arm64, build from source (see below).
+
 ### Install from Source
 
 ```bash
@@ -155,15 +157,27 @@ helm uninstall kube-ai-sre-agent
 
 ## Development
 
+### Build Locally (Mac/Linux)
+
 ```bash
-# Build locally
+# Clone repo
+git clone https://github.com/adiii717/kube-ai-sre-agent.git
+cd kube-ai-sre-agent
+
+# Build binaries
 make build
 
-# Build Docker images
-make docker-build
+# Build Docker images (uses your local arch - arm64 on M1/M2)
+docker build -t ghcr.io/adiii717/kube-ai-sre-agent-controller:local -f Dockerfile.controller .
+docker build -t ghcr.io/adiii717/kube-ai-sre-agent-analyzer:local -f Dockerfile.analyzer .
 
-# Deploy from local chart
-make deploy
+# Install with local images
+helm install kube-ai-sre-agent ./helm/kube-ai-sre-agent \
+  --set controller.image.tag=local \
+  --set analyzer.image.tag=local \
+  --set llm.provider=gemini \
+  --set llm.apiKey=YOUR_KEY \
+  --set slack.enabled=false
 ```
 
 ## License
