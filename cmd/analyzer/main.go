@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strconv"
 
@@ -175,8 +178,62 @@ func getPodLogsWithOptions(clientset *kubernetes.Clientset, namespace, podName, 
 }
 
 func sendSlackNotification(webhook, eventType, namespace, podName, analysis string) error {
-	// TODO: Implement actual Slack API call
-	klog.Infof("Sending to Slack: %s incident for %s/%s", eventType, namespace, podName)
+	// Create Slack message with blocks for better formatting
+	message := map[string]interface{}{
+		"blocks": []map[string]interface{}{
+			{
+				"type": "header",
+				"text": map[string]string{
+					"type": "plain_text",
+					"text": fmt.Sprintf("🚨 %s Detected", eventType),
+				},
+			},
+			{
+				"type": "section",
+				"fields": []map[string]string{
+					{
+						"type": "mrkdwn",
+						"text": fmt.Sprintf("*Pod:*\n`%s/%s`", namespace, podName),
+					},
+					{
+						"type": "mrkdwn",
+						"text": fmt.Sprintf("*Event Type:*\n%s", eventType),
+					},
+				},
+			},
+			{
+				"type": "divider",
+			},
+			{
+				"type": "section",
+				"text": map[string]string{
+					"type": "mrkdwn",
+					"text": fmt.Sprintf("*AI Analysis:*\n```%s```", analysis),
+				},
+			},
+		},
+	}
+
+	// Marshal to JSON
+	payload, err := json.Marshal(message)
+	if err != nil {
+		return fmt.Errorf("failed to marshal Slack message: %w", err)
+	}
+
+	// Send POST request to Slack webhook
+	resp, err := http.Post(webhook, "application/json", bytes.NewBuffer(payload))
+	if err != nil {
+		return fmt.Errorf("failed to send Slack notification: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("Slack webhook returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	klog.Infof("Successfully sent Slack notification for %s/%s", namespace, podName)
 	return nil
 }
 

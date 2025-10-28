@@ -180,6 +180,43 @@ deduplication:
 ```
 → Only basic deduplication (no silencing)
 
+### Slack Notifications
+
+Get AI-powered incident analysis delivered to your Slack channel:
+
+**1. Create a Slack Incoming Webhook:**
+   - Go to https://api.slack.com/apps
+   - Create a new app or select existing
+   - Enable "Incoming Webhooks" and create a webhook for your channel
+   - Copy the webhook URL (looks like `https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXX`)
+
+**2. Install with Slack enabled:**
+```bash
+helm install kube-ai-sre-agent oci://ghcr.io/adiii717/kube-ai-sre-agent \
+  --set llm.apiKey=YOUR_API_KEY \
+  --set slack.enabled=true \
+  --set slack.webhook=YOUR_SLACK_WEBHOOK_URL
+```
+
+**3. Example Slack message:**
+```
+🚨 CrashLoopBackOff Detected
+
+Pod:              Event Type:
+`default/myapp`   CrashLoopBackOff
+
+─────────────────────────────────
+AI Analysis:
+Root cause: Redis connection failing
+Fix: Update REDIS_HOST env variable
+Prevention: Use Service DNS + readiness probes
+```
+
+**Disable Slack (analysis only):**
+```bash
+helm install kube-ai-sre-agent ... --set slack.enabled=false
+```
+
 ### Verify Installation
 
 ```bash
