@@ -198,19 +198,16 @@ helm install kube-ai-sre-agent oci://ghcr.io/adiii717/kube-ai-sre-agent \
   --set slack.webhook=YOUR_SLACK_WEBHOOK_URL
 ```
 
-**3. Example Slack message:**
-```
-🚨 CrashLoopBackOff Detected
+**3. Slack Notification Example:**
 
-Pod:              Event Type:
-`default/myapp`   CrashLoopBackOff
+![Slack Notification](docs/slack-notification-example.png)
 
-─────────────────────────────────
-AI Analysis:
-Root cause: Redis connection failing
-Fix: Update REDIS_HOST env variable
-Prevention: Use Service DNS + readiness probes
-```
+You'll receive a formatted message with:
+- 🚨 Incident alert header
+- Pod name and event type
+- AI-powered root cause analysis
+- Immediate fix steps
+- Prevention recommendations
 
 **Disable Slack (analysis only):**
 ```bash
